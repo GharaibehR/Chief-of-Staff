@@ -1,5 +1,15 @@
 import { useState } from 'react';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'An unknown error occurred';
+}
+
 export default function Home() {
   const [message, setMessage] = useState('');
   const [response, setResponse] = useState('');
@@ -22,7 +32,7 @@ export default function Home() {
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
     } catch (error) {
-      setResponse('Error: ' + error.message);
+      setResponse('Error: ' + getErrorMessage(error));
     } finally {
       setLoading(false);
     }
