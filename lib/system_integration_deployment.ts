@@ -1,10 +1,20 @@
-import { ChiefOfStaffAgent } from './chief_of_staff_core';
+import { ChiefOfStaffSystem } from './chief_of_staff_core';
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'An unknown error occurred';
+}
 
 export class ChiefOfStaffSystemIntegrated {
-  private chiefOfStaff: ChiefOfStaffAgent;
+  private chiefOfStaff: ChiefOfStaffSystem;
 
   constructor() {
-    this.chiefOfStaff = new ChiefOfStaffAgent();
+    this.chiefOfStaff = new ChiefOfStaffSystem();
   }
 
   async processUserRequest(userInput: string, userId: string): Promise<any> {
@@ -14,14 +24,40 @@ export class ChiefOfStaffSystemIntegrated {
         ...response,
         timestamp: new Date().toISOString()
       };
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    } catch (error) {
+      console.error('System error:', getErrorMessage(error));
       
       return {
         success: false,
         message: 'I encountered an error processing your request. Please try again.',
-        error: errorMessage
+        error: getErrorMessage(error)
       };
     }
+  }
+
+  async getUserDashboard(userId: string) {
+    return {
+      tasks: {
+        total: 0,
+        pending: 0,
+        completed: 0,
+        overdue: 0
+      },
+      integrations: [],
+      activity: {
+        totalRequests: 0,
+        requestsThisWeek: 0
+      }
+    };
+  }
+
+  async exportUserData(userId: string) {
+    return {
+      user: { id: userId },
+      conversations: [],
+      tasks: [],
+      integrations: [],
+      analytics: []
+    };
   }
 }
