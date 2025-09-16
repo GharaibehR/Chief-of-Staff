@@ -81,7 +81,7 @@ export abstract class BaseAgent {
     };
   }
 
-  protected log(level: 'info' | 'warn' | 'error', message: string, data?: any) {
+  protected log(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
     console.log(`[${this.agentType.toUpperCase()}] ${level.toUpperCase()}: ${message}`, data || '');
   }
 }
@@ -117,7 +117,6 @@ export class InterpreterAgent extends BaseAgent {
   }
 
   private async parseIntent(input: string): Promise<{ name: string; confidence: number }> {
-    // Intent classification logic
     const intents = [
       { pattern: /schedule|meeting|calendar|appointment/i, name: 'schedule_meeting', weight: 0.9 },
       { pattern: /email|send|draft|compose/i, name: 'email_action', weight: 0.8 },
@@ -139,20 +138,17 @@ export class InterpreterAgent extends BaseAgent {
   private async extractEntities(input: string): Promise<Record<string, any>> {
     const entities: Record<string, any> = {};
 
-    // Extract dates/times
     const dateMatch = input.match(/\b(today|tomorrow|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\/\d{1,2}|\d{1,2}-\d{1,2})\b/gi);
     if (dateMatch) entities.date = dateMatch[0];
 
     const timeMatch = input.match(/\b(\d{1,2}:\d{2}\s*(am|pm)?|\d{1,2}\s*(am|pm))\b/gi);
     if (timeMatch) entities.time = timeMatch[0];
 
-    // Extract names/people
     const nameMatch = input.match(/\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/g);
     if (nameMatch) entities.people = nameMatch;
 
-    // Extract platforms
     const platforms = ['google', 'outlook', 'teams', 'linkedin', 'gmail', 'calendar'];
-    entities.platforms = platforms.filter(platform => 
+    entities.platforms = platforms.filter((platform: string) => 
       input.toLowerCase().includes(platform)
     );
 
@@ -160,7 +156,7 @@ export class InterpreterAgent extends BaseAgent {
   }
 
   private identifyPlatforms(input: string): string[] {
-    const platformKeywords = {
+    const platformKeywords: Record<string, string[]> = {
       google: ['google', 'gmail', 'gcal', 'google calendar', 'google meet'],
       microsoft: ['outlook', 'teams', 'microsoft', 'onedrive', 'sharepoint'],
       linkedin: ['linkedin', 'professional network', 'connections']
@@ -181,16 +177,9 @@ export class InterpreterAgent extends BaseAgent {
   private assessComplexity(intent: { name: string }, entities: Record<string, any>, platforms: string[]): 'low' | 'medium' | 'high' {
     let complexity = 0;
 
-    // Multi-platform operations increase complexity
     if (platforms.length > 1) complexity += 2;
-    
-    // Multiple people involved
     if (entities.people && entities.people.length > 2) complexity += 1;
-    
-    // Complex intents
     if (['schedule_meeting', 'content_creation'].includes(intent.name)) complexity += 1;
-    
-    // Time-sensitive operations
     if (entities.date || entities.time) complexity += 1;
 
     if (complexity >= 3) return 'high';
@@ -228,7 +217,6 @@ export class QualityAgent extends BaseAgent {
     const issues: ValidationResult['issues'] = [];
     const recommendations: string[] = [];
 
-    // Data structure validation
     if (!data || typeof data !== 'object') {
       issues.push({
         type: 'structure',
@@ -237,7 +225,6 @@ export class QualityAgent extends BaseAgent {
       });
     }
 
-    // Content safety validation
     if (typeof data === 'object' && data.content) {
       const safetyCheck = await this.checkContentSafety(data.content);
       if (!safetyCheck.safe) {
@@ -249,7 +236,6 @@ export class QualityAgent extends BaseAgent {
       }
     }
 
-    // Platform-specific validation
     if (sourceAgent === 'linkedin' && data.post) {
       if (data.post.length > 3000) {
         issues.push({
@@ -261,7 +247,6 @@ export class QualityAgent extends BaseAgent {
       }
     }
 
-    // Time validation for scheduling
     if (data.datetime) {
       const scheduledTime = new Date(data.datetime);
       const now = new Date();
@@ -276,18 +261,17 @@ export class QualityAgent extends BaseAgent {
     }
 
     return {
-      passed: issues.filter(i => i.severity === 'high').length === 0,
+      passed: issues.filter((i: any) => i.severity === 'high').length === 0,
       issues,
       recommendations
     };
   }
 
   private async checkContentSafety(content: string): Promise<{ safe: boolean; reason?: string }> {
-    // Basic content safety checks
     const dangerousPatterns = [
       /\b(password|confidential|secret|private key)\b/i,
-      /\b\d{3}-\d{2}-\d{4}\b/, // SSN pattern
-      /\b\d{16}\b/, // Credit card pattern
+      /\b\d{3}-\d{2}-\d{4}\b/,
+      /\b\d{16}\b/,
     ];
 
     for (const pattern of dangerousPatterns) {
@@ -310,7 +294,6 @@ export class ChiefOfStaffAgent extends BaseAgent {
     this.agents = new Map();
     this.conversationHistory = new Map();
     
-    // Initialize agents
     this.agents.set('interpreter', new InterpreterAgent());
     this.agents.set('qa', new QualityAgent());
   }
@@ -319,7 +302,6 @@ export class ChiefOfStaffAgent extends BaseAgent {
     try {
       this.log('info', 'Processing user request', { task: message.payload.task });
 
-      // Step 1: Interpret user input
       const interpretedResponse = await this.delegateToAgent('interpreter', {
         ...message,
         payload: {
@@ -335,14 +317,9 @@ export class ChiefOfStaffAgent extends BaseAgent {
       const userIntent: UserIntent = interpretedResponse.data;
       this.log('info', 'User intent identified', userIntent);
 
-      // Step 2: Route to appropriate agent(s)
       const executionPlan = this.createExecutionPlan(userIntent);
       const results = await this.executeWorkflow(executionPlan, message);
-
-      // Step 3: Validate results
       const validatedResults = await this.validateResults(results);
-
-      // Step 4: Compose final response
       const finalResponse = this.composeFinalResponse(validatedResults, userIntent);
 
       return this.createResponse(message.id, 'success', finalResponse);
@@ -386,7 +363,7 @@ export class ChiefOfStaffAgent extends BaseAgent {
     originalMessage: AgentMessage
   ): Promise<AgentResponse[]> {
     if (plan.parallel) {
-      const promises = plan.agents.map(agentType => 
+      const promises = plan.agents.map((agentType: AgentType) => 
         this.delegateToAgent(agentType, originalMessage)
       );
       return Promise.all(promises);
@@ -402,7 +379,6 @@ export class ChiefOfStaffAgent extends BaseAgent {
         
         results.push(response);
         
-        // Pass successful results to next agent
         if (response.status === 'success' && response.data) {
           currentContext = { ...currentContext, previousResult: response.data };
         }
@@ -445,7 +421,7 @@ export class ChiefOfStaffAgent extends BaseAgent {
             task: 'validate_output',
             context: { 
               data: result.data,
-              sourceAgent: 'unknown' // Should be tracked better
+              sourceAgent: 'unknown'
             },
             priority: 'medium',
             validation_required: true
@@ -482,14 +458,14 @@ export class ChiefOfStaffAgent extends BaseAgent {
   }
 
   private composeFinalResponse(results: AgentResponse[], intent: UserIntent): any {
-    const successfulResults = results.filter(r => r.status === 'success');
-    const errors = results.filter(r => r.status === 'error');
+    const successfulResults = results.filter((r: AgentResponse) => r.status === 'success');
+    const errors = results.filter((r: AgentResponse) => r.status === 'error');
 
     if (errors.length > 0) {
       return {
         success: false,
-        message: `Some operations failed: ${errors.map(e => e.error).join(', ')}`,
-        partial_results: successfulResults.map(r => r.data),
+        message: `Some operations failed: ${errors.map((e: AgentResponse) => e.error).join(', ')}`,
+        partial_results: successfulResults.map((r: AgentResponse) => r.data),
         intent: intent.intent
       };
     }
@@ -497,11 +473,11 @@ export class ChiefOfStaffAgent extends BaseAgent {
     return {
       success: true,
       message: this.generateSuccessMessage(intent.intent, successfulResults),
-      results: successfulResults.map(r => r.data),
+      results: successfulResults.map((r: AgentResponse) => r.data),
       intent: intent.intent,
       processing_summary: {
         total_agents: results.length,
-        total_time: results.reduce((sum, r) => sum + (r.processing_time || 0), 0),
+        total_time: results.reduce((sum: number, r: AgentResponse) => sum + (r.processing_time || 0), 0),
         complexity: intent.complexity
       }
     };
@@ -519,7 +495,6 @@ export class ChiefOfStaffAgent extends BaseAgent {
     return messages[intent] || 'Task completed successfully';
   }
 
-  // Public methods for external integration
   public addAgent(agentType: AgentType, agent: BaseAgent): void {
     this.agents.set(agentType, agent);
     this.log('info', `Agent ${agentType} registered`);
