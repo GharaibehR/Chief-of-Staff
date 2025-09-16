@@ -391,7 +391,7 @@ export class TaskAgent extends BaseAgent {
   private extractTags(task: string): string[] {
     const tagMatch = task.match(/tags?[:\s]+([^.]+)/i);
     if (tagMatch) {
-      return tagMatch[1].split(',').map(tag => tag.trim());
+      return tagMatch[1].split(',').map((tag: string) => tag.trim());
     }
     return [];
   }
