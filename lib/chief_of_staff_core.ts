@@ -170,7 +170,7 @@ export class InterpreterAgent extends BaseAgent {
     const lowerInput = input.toLowerCase();
 
     for (const [platform, keywords] of Object.entries(platformKeywords)) {
-      if (keywords.some(keyword => lowerInput.includes(keyword))) {
+      if (keywords.some((keyword: string) => lowerInput.includes(keyword))) {
         platforms.push(platform);
       }
     }
