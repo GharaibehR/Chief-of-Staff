@@ -252,7 +252,7 @@ export class LinkedInAgent extends BaseAgent {
     }
   }
 
-  private parseScheduleTime(task: string, context: any): string {
+  private parseScheduleTime(task: string, context: Record<string, any>): string {
     if (context.scheduledTime) return context.scheduledTime;
     
     const timeMatch = task.match(/(?:at|@)\s*(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
@@ -294,10 +294,10 @@ export class LinkedInAgent extends BaseAgent {
 
 // Content Generation Agent
 export class ContentAgent extends BaseAgent {
-  private userStyle: any = {};
+  private userStyle: Record<string, any> = {};
   private templates: Record<string, string> = {};
 
-  constructor(userStyle?: any) {
+  constructor(userStyle?: Record<string, any>) {
     super('content');
     this.userStyle = userStyle || {};
     this.initializeTemplates();
@@ -505,8 +505,8 @@ export class ContentAgent extends BaseAgent {
     }
   }
 
-  // Helper methods with simplified implementations
-  private parseEmailRequest(task: string, context: any) {
+  // Helper methods with proper typing
+  private parseEmailRequest(task: string, context: Record<string, any>): Record<string, any> {
     return {
       recipient: context.recipient || 'recipient@example.com',
       subject: context.subject || 'Message from Chief of Staff',
@@ -516,7 +516,7 @@ export class ContentAgent extends BaseAgent {
     };
   }
 
-  private parseLinkedInRequest(task: string, context: any) {
+  private parseLinkedInRequest(task: string, context: Record<string, any>): Record<string, any> {
     return {
       topic: context.topic || 'Professional Update',
       tone: context.tone || 'professional',
@@ -525,7 +525,7 @@ export class ContentAgent extends BaseAgent {
     };
   }
 
-  private parseDocumentRequest(task: string, context: any) {
+  private parseDocumentRequest(task: string, context: Record<string, any>): Record<string, any> {
     return {
       title: context.title || 'Professional Document',
       type: context.type || 'document',
@@ -534,7 +534,7 @@ export class ContentAgent extends BaseAgent {
     };
   }
 
-  private async generateEmailContent(details: any): Promise<string> {
+  private async generateEmailContent(details: Record<string, any>): Promise<string> {
     return `Subject: ${details.subject}
 
 Dear ${details.recipient},
@@ -547,21 +547,23 @@ Best regards,
 Your AI Assistant`;
   }
 
-  private async generateLinkedInContent(details: any): Promise<string> {
+  private async generateLinkedInContent(details: Record<string, any>): Promise<string> {
+    const hashtags = Array.isArray(details.hashtags) ? details.hashtags : ['productivity'];
+    
     return `Excited to share some thoughts on ${details.topic}! 🚀
 
 In today's fast-paced world, leveraging AI and technology has become essential for staying competitive and efficient.
 
 What are your thoughts on this topic? I'd love to hear your experiences!
 
-${details.hashtags.map((tag: string) => `#${tag}`).join(' ')}`;
+${hashtags.map((tag: string) => `#${tag}`).join(' ')}`;
   }
 
   private async generateResponseContent(originalMessage: string, responseType: string): Promise<string> {
     return `Thank you for your message! I appreciate you reaching out. I'll review your request and get back to you with a detailed response shortly.`;
   }
 
-  private async generateDocumentContent(details: any): Promise<string> {
+  private async generateDocumentContent(details: Record<string, any>): Promise<string> {
     return `# ${details.title}
 
 ## Introduction
@@ -580,7 +582,7 @@ In summary, this document has covered the key aspects of ${details.title.toLower
                  .replace(/\b(thing|stuff)\b/gi, 'item');
   }
 
-  private async performToneAnalysis(content: string): Promise<any> {
+  private async performToneAnalysis(content: string): Promise<Record<string, any>> {
     // Basic tone analysis - in production, use sentiment analysis APIs
     return {
       sentiment: 'neutral',
@@ -600,7 +602,7 @@ In summary, this document has covered the key aspects of ${details.title.toLower
   }
 
   private identifyImprovements(original: string, improved: string): string[] {
-    const improvements = [];
+    const improvements: string[] = [];
     
     if (improved.length < original.length) {
       improvements.push('Made content more concise');
@@ -612,8 +614,8 @@ In summary, this document has covered the key aspects of ${details.title.toLower
     return improvements;
   }
 
-  private generateToneRecommendations(analysis: any): string[] {
-    const recommendations = [];
+  private generateToneRecommendations(analysis: Record<string, any>): string[] {
+    const recommendations: string[] = [];
     
     if (analysis.sentiment === 'negative') {
       recommendations.push('Consider using more positive language');
@@ -625,7 +627,7 @@ In summary, this document has covered the key aspects of ${details.title.toLower
     return recommendations;
   }
 
-  public updateUserStyle(newStyle: any): void {
+  public updateUserStyle(newStyle: Record<string, any>): void {
     this.userStyle = { ...this.userStyle, ...newStyle };
     this.log('info', 'User style updated', newStyle);
   }
