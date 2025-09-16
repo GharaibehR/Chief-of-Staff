@@ -43,6 +43,17 @@ export interface ValidationResult {
   recommendations: string[];
 }
 
+// Helper function to safely get error message
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'An unknown error occurred';
+}
+
 // Base Agent Class
 export abstract class BaseAgent {
   protected agentType: AgentType;
@@ -101,7 +112,7 @@ export class InterpreterAgent extends BaseAgent {
 
       return this.createResponse(message.id, 'success', result);
     } catch (error) {
-      return this.createResponse(message.id, 'error', null, error.message);
+      return this.createResponse(message.id, 'error', null, getErrorMessage(error));
     }
   }
 
@@ -209,7 +220,7 @@ export class QualityAgent extends BaseAgent {
         approved_data: validation.passed ? dataToValidate : null
       });
     } catch (error) {
-      return this.createResponse(message.id, 'error', null, error.message);
+      return this.createResponse(message.id, 'error', null, getErrorMessage(error));
     }
   }
 
@@ -337,7 +348,7 @@ export class ChiefOfStaffAgent extends BaseAgent {
       return this.createResponse(message.id, 'success', finalResponse);
     } catch (error) {
       this.log('error', 'Processing failed', error);
-      return this.createResponse(message.id, 'error', null, error.message);
+      return this.createResponse(message.id, 'error', null, getErrorMessage(error));
     }
   }
 
@@ -549,10 +560,3 @@ export class ChiefOfStaffSystem {
     return await this.chiefOfStaff.process(message);
   }
 }
-
-// Example usage:
-// const system = new ChiefOfStaffSystem();
-// const result = await system.processUserRequest(
-//   "Schedule a team meeting with John and Sarah tomorrow at 2 PM on Google Calendar",
-//   "user_123"
-// );
