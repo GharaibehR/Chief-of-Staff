@@ -554,7 +554,7 @@ In today's fast-paced world, leveraging AI and technology has become essential f
 
 What are your thoughts on this topic? I'd love to hear your experiences!
 
-${details.hashtags.map(tag => `#${tag}`).join(' ')}`;
+${details.hashtags.map((tag: string) => `#${tag}`).join(' ')}`;
   }
 
   private async generateResponseContent(originalMessage: string, responseType: string): Promise<string> {
